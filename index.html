@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>คำนวณความชื้นสัมพัทธ์</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(120deg, #e0eafc 0%, #cfdef3 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            background: #fff;
+            max-width: 400px;
+            margin: 3em auto;
+            padding: 2em 2.5em 2.5em 2.5em;
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08), 0 1.5px 6px rgba(0,0,0,0.05);
+        }
+        h1 {
+            text-align: center;
+            color: #2b5876;
+            margin-bottom: 1.5em;
+            font-size: 1.6em;
+            letter-spacing: 1px;
+        }
+        form label {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 1.2em;
+            color: #333;
+            font-weight: 500;
+        }
+        input[type="number"] {
+            margin-top: 0.5em;
+            padding: 0.5em 0.7em;
+            border: 1.5px solid #b7cbe6;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: border 0.2s;
+        }
+        input[type="number"]:focus {
+            border: 1.5px solid #2b5876;
+            outline: none;
+        }
+        button[type="submit"] {
+            width: 100%;
+            padding: 0.7em;
+            background: linear-gradient(90deg, #2b5876 0%, #4e4376 100%);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 0.5em;
+            box-shadow: 0 2px 8px rgba(43,88,118,0.08);
+            transition: background 0.2s;
+        }
+        button[type="submit"]:hover {
+            background: linear-gradient(90deg, #4e4376 0%, #2b5876 100%);
+        }
+        .result {
+            margin-top: 2em;
+            font-size: 1.5em;
+            text-align: center;
+            color: #2b5876;
+            min-height: 1.5em;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        .flag {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 1.5em;
+        }
+        .flag-color {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin-bottom: 0.7em;
+            border: 4px solid #eee;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            font-weight: bold;
+            color: #fff;
+        }
+        .flag-red { background: #e74c3c; }
+        .flag-orange { background: #f39c12; }
+        .flag-yellow { background: #f7d358; color: #b8860b; }
+        .flag-green { background: #27ae60; }
+        .flag-blue { background: #3498db; }
+        .flag-name {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 0.3em;
+            text-align: center;
+            text-shadow: 0 1px 2px #fff8;
+        }
+        .flag-desc {
+            font-size: 1em;
+            text-align: center;
+            color: #333;
+            font-weight: 500;
+        }
+        @media (max-width: 500px) {
+            .container {
+                padding: 1.2em 0.7em 1.5em 0.7em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>คำนวณความชื้นสัมพัทธ์</h1>
+        <form id="humidityForm" onsubmit="event.preventDefault(); calculateHumidity();">
+            <label>
+                อุณหภูมิปรอทแห้ง (°C)
+                <input type="number" id="dry" min="27" max="44" required placeholder="27 - 44">
+            </label>
+            <label>
+                อุณหภูมิปรอทเปียก (°C)
+                <input type="number" id="wet" min="15" max="40" required placeholder="15 - 40">
+            </label>
+            <button type="submit">คำนวณ</button>
+        </form>
+        <div class="result" id="result"></div>
+        <div class="flag" id="flag" style="display:none;">
+            <div class="flag-color" id="flagColor"></div>
+            <div class="flag-name" id="flagName"></div>
+            <div class="flag-desc" id="flagDesc"></div>
+        </div>
+    </div>
+    <script>
+        // ฟังก์ชันคำนวณความชื้นสัมพัทธ์โดยใช้สูตร psychrometric approximation
+        function calculateHumidity() {
+            const dry = parseFloat(document.getElementById('dry').value);
+            const wet = parseFloat(document.getElementById('wet').value);
+            const resultDiv = document.getElementById('result');
+            const flagDiv = document.getElementById('flag');
+            const flagColor = document.getElementById('flagColor');
+            const flagDesc = document.getElementById('flagDesc');
+            const flagName = document.getElementById('flagName');
+
+            if (isNaN(dry) || isNaN(wet)) {
+                resultDiv.textContent = "กรุณากรอกข้อมูลให้ครบถ้วน";
+                flagDiv.style.display = "none";
+                return;
+            }
+            if (dry < 27 || dry > 44 || wet < 15 || wet > 40) {
+                resultDiv.textContent = "กรุณากรอกค่าในช่วงที่กำหนด";
+                flagDiv.style.display = "none";
+                return;
+            }
+            if (wet > dry) {
+                resultDiv.textContent = "อุณหภูมิปรอทเปียกต้องไม่มากกว่าปรอทแห้ง";
+                flagDiv.style.display = "none";
+                return;
+            }
+
+            function satVaporPressure(T) {
+                // สูตร Magnus (°C)
+                return 6.112 * Math.exp((17.62 * T) / (243.12 + T));
+            }
+            const Ew = satVaporPressure(wet);
+            const Es = satVaporPressure(dry);
+            const A = 0.00066 * (1 + 0.00115 * wet);
+            const RH = 100 * ((Ew - A * (dry - wet) * 1013) / Es);
+
+            // แสดงผลความชื้นสัมพัทธ์
+            resultDiv.textContent = "";
+            const rhSpan = document.createElement("span");
+            rhSpan.textContent = "ความชื้นสัมพัทธ์ ≈ " + RH.toFixed(1) + " %";
+            rhSpan.style.fontWeight = "bold";
+            rhSpan.style.fontSize = "1.3em";
+            rhSpan.style.letterSpacing = "1px";
+            resultDiv.appendChild(rhSpan);
+
+            // Flag color & description
+            let colorClass = "";
+            let desc = "";
+            let name = "";
+            if (RH >= 80) {
+                colorClass = "flag-red";
+                name = "ธงสีแดง (ชื้นมาก)";
+                desc = "ชื้นมาก – เสี่ยงเชื้อรา อับชื้น ความไม่สบายตัวสูง";
+            } else if (RH >= 70) {
+                colorClass = "flag-orange";
+                name = "ธงสีส้ม (ชื้น)";
+                desc = "ชื้น – เริ่มไม่สบายตัว เสี่ยงเชื้อราสะสม";
+            } else if (RH >= 60) {
+                colorClass = "flag-yellow";
+                name = "ธงสีเหลือง (ปานกลาง)";
+                desc = "ปานกลาง – เริ่มรู้สึกอึดอัด โดยเฉพาะในพื้นที่ปิด";
+            } else if (RH >= 40) {
+                colorClass = "flag-green";
+                name = "ธงสีเขียว (เหมาะสม)";
+                desc = "เหมาะสม – ระดับที่ดีต่อสุขภาพและสิ่งแวดล้อม";
+            } else {
+                colorClass = "flag-blue";
+                name = "ธงสีน้ำเงิน (แห้ง)";
+                desc = "แห้ง – ผิวแห้ง เสี่ยงไฟฟ้าสถิต คอแห้ง";
+            }
+            flagColor.className = "flag-color " + colorClass;
+            flagColor.textContent = "";
+            flagName.textContent = name;
+            flagDesc.textContent = desc;
+            flagDiv.style.display = "flex";
+        }
+    </script>
+</body>
+</html>
